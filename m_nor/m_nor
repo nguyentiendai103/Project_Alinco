@@ -1,0 +1,436 @@
+/**********************************************************************************************************************
+ * DISCLAIMER
+ * This software is supplied by Renesas Electronics Corporation and is only intended for use with Renesas products. No
+ * other uses are authorized. This software is owned by Renesas Electronics Corporation and is protected under all
+ * applicable laws, including copyright laws.
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND RENESAS MAKES NO WARRANTIES REGARDING
+ * THIS SOFTWARE, WHETHER EXPRESS, IMPLIED OR STATUTORY, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. ALL SUCH WARRANTIES ARE EXPRESSLY DISCLAIMED. TO THE MAXIMUM
+ * EXTENT PERMITTED NOT PROHIBITED BY LAW, NEITHER RENESAS ELECTRONICS CORPORATION NOR ANY OF ITS AFFILIATED COMPANIES
+ * SHALL BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES FOR ANY REASON RELATED TO
+ * THIS SOFTWARE, EVEN IF RENESAS OR ITS AFFILIATES HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+ * Renesas reserves the right, without notice, to make changes to this software and to discontinue the availability of
+ * this software. By using this software, you agree to the additional terms and conditions found by accessing the
+ * following link:
+ * http://www.renesas.com/disclaimer
+ *
+ * Copyright (C) 2020 Renesas Electronics Corporation. All rights reserved.
+ *********************************************************************************************************************/
+/***********************************************************************/
+/*                                                                     */
+/*  FILE        :m_nor.c		                                       */
+/*  DATE        :Tue, Oct 31, 2006                                     */
+/*  DESCRIPTION :Main Program                                          */
+/*  CPU TYPE    :                                                      */
+/*                                                                     */
+/*  NOTE:THIS IS A TYPICAL EXAMPLE.                                    */
+/*                                                                     */
+/***********************************************************************/
+#include "include.h"
+
+/****************************************************************************/
+/* 		setNor																*/
+#if 1
+// Set NOR Flash
+void setNor()
+{
+	unsigned char count;
+	unsigned char dmy;
+	unsigned char i;
+	
+	if(norMode == 0){
+		count = 0;
+		for(i=0;i<sizeof(norCode)/sizeof(norCode[0]);i++){
+			dmy = readNorDeviceId(i);
+			if(dmy){
+				count++;
+			}
+		}
+		norMode = 1;
+	} else if(norMode == 1){
+		
+		//writeNor(0,0x00010000,wBuff,10);
+		
+		//readNor (1,0,data1,32);
+	for(i=0;i<10;i++);
+		eraseNorBlock(1,0);
+	for(i=0;i<10;i++);
+ 		//readNor (0,0x00040000,data1,32);
+		
+		//readNor (0,0x00000000,data1,32);
+		// blankCheck(0,5);
+	}
+	
+	
+}
+
+
+#endif
+/* 		End of setNor														*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/* 		readNor, writeNor, etc.												*/
+#if 1
+// Read data from Nor flash
+unsigned char readNor(unsigned char chipNo,unsigned long sAddr, unsigned short* dPos, unsigned short length)
+{	
+	unsigned short	 data;
+	unsigned long    blockAddr;
+	unsigned long    blockStartAddr;
+	
+	unsigned short*  pos;
+	unsigned char    i;	
+
+	
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+
+	blockAddr = (unsigned long*)norCsAddrTbl[chipNo];
+	blockStartAddr = BLOCK_TO_ADDR(sAddr);
+	blockStartAddr = blockAddr + blockStartAddr;
+
+	// data = (char)(blockAddr >> 16) & 0xFF;
+	// sendNorData(chipNo, blockAddr,data);
+	// data = (char)(blockAddr >> 8) & 0xFF;SSSSS
+	// sendNorData(chipNo, blockAddr,data);
+	// data = (char)(blockAddr & 0xFF);
+	// sendNorData(chipNo, blockAddr,data);
+
+
+ 	sendNorCmd(chipNo, NOR_CMD_READ);
+	
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	
+	data = (char)(blockStartAddr >> 16) & 0xFF;
+	sendNorData(chipNo, blockStartAddr,data);
+	data = (char)(blockStartAddr >> 8) & 0xFF;
+	sendNorData(chipNo, blockStartAddr,data);
+	data = (char)(blockStartAddr & 0xFF);
+	sendNorData(chipNo, blockStartAddr,data);
+	
+
+
+	for(i=0;i<length;i++){
+		data1[i] = readNorWord(chipNo, blockStartAddr);
+		blockStartAddr++;
+	}
+	for(i=0;i<length;i++){
+		*(dPos + i) = data1[i];
+	}
+
+	return 1;
+}
+
+// Write data to Nor flash
+unsigned char writeNor(unsigned char chipNo, unsigned long dAddr, unsigned short* sPos, unsigned short length)
+{	
+	unsigned short blockNo;
+	unsigned short data;
+	unsigned long  addr;
+	unsigned short i;
+
+
+	// sendNorCmd(chipNo, NOR_CMD_UNPROTECTED);
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	blockNo = ADDR_TO_BLOCK(dAddr);
+	setNorAddrA25A24(blockNo);
+	
+	// eraseNorBlock(chipNo,blockNo);
+	
+	sendNorCmd(chipNo, NOR_CMD_PAGE_PRG_3RD);
+	data = (char)(dAddr >> 16) & 0xFF;
+	sendNorData(chipNo, dAddr,data);
+	data = (char)(dAddr >> 8) & 0xFF;
+	sendNorData(chipNo, dAddr,data);
+	data = (char)(dAddr & 0xFF);
+	sendNorData(chipNo, dAddr,data);
+
+	// 	data = 0xaa00;
+	// 	sPos = data;
+	// sendNorData(chipNo,dAddr,sPos);
+
+	for(i=0;i<length;i++){
+		data = *(sPos + i);
+		// addr = dAddr + (i * NOR_PAGE_SIZE);
+		sendNorData(chipNo,dAddr,data);
+	}
+	
+	
+	return 1;
+}
+
+// Erase block of Nor flash
+unsigned char eraseNorBlock(unsigned char chipNo, unsigned short blockNo)
+{	
+	unsigned long blockStartAddr;
+	unsigned long blockAddr;
+	unsigned short data;
+	unsigned short length;
+	unsigned short* pos;
+	unsigned short* dPos;
+	unsigned char i;
+	unsigned char flg;
+
+	length = 32;
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	
+	//  Choose Address chip 
+	blockAddr = (unsigned long*)norCsAddrTbl[chipNo];
+	
+	// Send addr chip A24,25
+	setNorAddrA25A24(blockAddr);
+		
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	// Address Block
+	blockStartAddr = BLOCK_TO_ADDR(blockNo);
+	// Address chip + block
+	blockStartAddr = blockAddr + blockStartAddr;
+
+	// Send Addr chip + block 
+	data = (char)(blockStartAddr >> 16) & 0xFF;
+	sendNorData(chipNo, blockStartAddr,data);
+	data = (char)(blockStartAddr >> 8) & 0xFF;
+	sendNorData(chipNo, blockStartAddr,data);
+	data = (char)(blockStartAddr & 0xFF);
+	sendNorData(chipNo, blockStartAddr,data);
+
+
+	// setNorAddrA25A24(blockStartAddr);
+	
+	
+	sendNorCmd(chipNo, NOR_CMD_ENTER_NON_PRO_1ST);
+	sendNorCmd(chipNo, NOR_CMD_ENTER_NON_PRO_2ND);
+	sendNorCmd(chipNo, NOR_CMD_ENTER_NON_PRO_3RD);
+	sendNorCmd(chipNo, NOR_CMD_PRO_NON_PRO_1ST);
+	sendNorCmd(chipNo, NOR_CMD_PRO_NON_PRO_2ND);
+	
+
+	data = readNorWord(chipNo, 0x00000002);
+	for(i=0;i<100;i++);
+	sendNorCmd(chipNo, NOR_CMD_HEADER_1ST);
+	sendNorCmd(chipNo, NOR_CMD_HEADER_2ND);
+ 	sendNorCmd(chipNo, NOR_CMD_BLOCK_ERASE_3RD);
+	sendNorCmd(chipNo, NOR_CMD_BLOCK_ERASE_4TH);
+	sendNorCmd(chipNo, NOR_CMD_BLOCK_ERASE_5TH);
+	sendNorCmd(chipNo, NOR_CMD_BLOCK_ERASE_6TH);
+	
+	// setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+
+ 	// data = (char)(blockStartAddr >> 16) & 0xFF;
+	// sendNorData(chipNo, blockStartAddr,data);
+	// data = (char)(blockStartAddr >> 8) & 0xFF;
+	// sendNorData(chipNo, blockStartAddr,data);
+	// data = (char)(blockStartAddr & 0xFF);
+	// sendNorData(chipNo, blockStartAddr,data);
+
+	sendNorCmd(chipNo, NOR_CMD_EXIT_NON_PRO_1ST);
+	sendNorCmd(chipNo, NOR_CMD_EXIT_NON_PRO_2ND);
+	
+	
+	 data = readNorWord(chipNo,blockStartAddr);
+	for(i=0;i<100;i++);
+	for(i=0;i<length;i++){
+		data1[i] = readNorWord(chipNo, blockStartAddr);
+		blockStartAddr++;
+		dPos = data1[i];
+		
+	}
+
+	// for(i=0;i<length;i++){
+	// 	*(dPos + i) = data1[i];
+	// }
+
+	
+
+	return 1;
+
+}
+
+// Erase chip
+unsigned char eraseNorChip(unsigned char chipNo)
+{
+	return 1;
+}
+
+// Read device ID of Nor flash
+unsigned char readNorDeviceId(unsigned char chipNo)
+{
+	unsigned short sBuff[4];
+	unsigned short* pos;
+	unsigned char flg;
+	unsigned char i;
+	
+	// Send auto select command to put NOR flash into AUTO SELECT MODE
+	sendNorCmd(chipNo, NOR_CMD_HEADER_1ST);
+	sendNorCmd(chipNo, NOR_CMD_HEADER_2ND);
+	sendNorCmd(chipNo, NOR_CMD_AUTO_SELECT_3RD);
+	
+	// Read manuafacturer code
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	sBuff[0] = readNorWord(chipNo, 0x00000000);
+	sBuff[1] = readNorWord(chipNo, 0x00000001);
+	sBuff[2] = readNorWord(chipNo, 0x0000000E);
+	sBuff[3] = readNorWord(chipNo, 0x0000000F);
+	
+	flg = 1;
+	if(sBuff[0] ^ NOR_MANUFACTURER_CODE){
+		flg = 0;
+	}
+	if(sBuff[1] ^ NOR_DEVICE_CODE1){
+		flg = 0;
+	}
+	if(sBuff[2] ^ NOR_DEVICE_CODE2){
+		flg = 0;
+	}
+	if(sBuff[3] ^ NOR_DEVICE_CODE3){
+		flg = 0;
+	}
+	
+	if(flg){
+		pos = &norCode[chipNo].manufacturerCode;
+		for(i=0;i<sizeof(sBuff)/sizeof(sBuff[0]);i++){
+			*(pos + i) = sBuff[i];
+		}
+	}
+	
+	// Exit from auto select mode
+	sendNorCmd(chipNo, NOR_CMD_EXIT_AUTO_SEL);
+	
+	return flg;
+
+	
+}
+
+// blank check
+unsigned char blankCheck(unsigned char chipNo, unsigned short blockNo)
+{
+	unsigned long blockStartAddr;
+	unsigned long blockAddr;
+	unsigned short data;
+	unsigned long dmy;
+	unsigned char flg;
+
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	blockAddr = (unsigned long*)norCsAddrTbl[chipNo];
+	blockStartAddr = BLOCK_TO_ADDR(blockNo);
+	blockStartAddr = blockAddr + blockStartAddr;
+
+	sendNorCmd(chipNo,NOR_CMD_BLANK_CHECK_3RD);
+	sendNorCmd(chipNo,NOR_CMD_BLANK_CHECK_4TH);
+	sendNorCmd(chipNo,NOR_CMD_BLANK_CHECK_5TH);
+	sendNorCmd(chipNo,NOR_CMD_BLANK_CHECK_6TH);
+	sendNorCmd(chipNo,NOR_CMD_BLANK_CHECK_7TH);
+	
+	data = readNorWord(chipNo,blockStartAddr);
+	if(data == 0xFFFF){
+		return 	1;
+	}else{
+		return 0;
+	}
+
+}
+#endif
+/* 		End of readNor, writeNor, etc.										*/
+/****************************************************************************/
+
+
+/****************************************************************************/
+/* 		setNorAddr, sendNorCmd, etc.										*/
+#if 1
+// Set Nor Flash Address
+void setNorAddrA25A24(unsigned long addr)
+{
+	// A25
+	if(addr & NOR_A25_MASK){
+		A25 = 1;
+	} else {
+		A25 = 0;
+	}
+	
+	// A24
+	if(addr & NOR_A24_MASK){
+		A24 = 1;
+	} else {
+		A24 = 0;
+	}
+}
+
+// Send Nor Flash Command
+void sendNorCmd(unsigned char chipNo, unsigned long cmd)
+{
+	unsigned short* pos;
+	unsigned short cmdAddr;
+	unsigned short cmdData;
+	
+	cmdAddr = (unsigned short)((cmd & 0xFFFF0000) >> 16);
+	cmdData = (unsigned short)(cmd & 0x0000FFFF);
+	
+	// Get address from chip number
+	pos = (unsigned short*)norCsAddrTbl[chipNo];
+	pos += cmdAddr;
+	
+	setNorAddrA25A24(0x00000000);		// Reset A25 and A24
+	*pos = cmdData;
+}
+
+// Send data to a specific address
+void sendNorData(unsigned char chipNo, unsigned long destAddr, unsigned short data)
+{
+	unsigned short* pos;
+	unsigned long addr;
+	
+	// Get address from chip number
+	addr = destAddr & 0x00FFFFFF;
+	addr += (unsigned long)norCsAddrTbl[chipNo];
+	pos = (unsigned short*)addr;
+	
+	setNorAddrA25A24(destAddr);		// Set A25 and A24
+	*pos = data;
+}
+
+// Read 1 word from NOR flash
+unsigned short readNorWord(unsigned char chipNo, unsigned long sourceAddr)
+{
+	unsigned short* pos;
+	unsigned long addr;
+	unsigned short data;
+	
+	// Get address from chip number
+	addr = sourceAddr & 0x00FFFFFF;
+	addr += (unsigned long)norCsAddrTbl[chipNo];
+	pos = (unsigned short*)addr;
+	
+	setNorAddrA25A24(sourceAddr);		// Set A25 and A24
+	data = *pos;
+	
+	return data;
+}
+
+// Read 1 byte from NOR flash
+unsigned char readNorByte(unsigned char chipNo, unsigned long sourceAddr)
+{
+	unsigned char* pos;
+	unsigned long addr;
+	unsigned char data;
+	
+	// Get address from chip number
+	addr = sourceAddr & 0x00FFFFFF;
+	addr += (unsigned long)norCsAddrTbl[chipNo];
+	pos = (unsigned char*)addr;
+	
+	setNorAddrA25A24(sourceAddr);		// Set A25 and A24
+	data = *pos;
+	
+	return data;
+}
+
+
+#endif
+/* 		End of setNorAddr, sendNorCmd, etc.									*/
+/****************************************************************************/
+
+
+
+
+

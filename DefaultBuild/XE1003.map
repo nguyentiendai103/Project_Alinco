@@ -1,0 +1,100 @@
+Renesas Optimizing Linker (W2.05.00 )             13-Jun-2024 14:57:14
+
+*** Options ***
+
+-subcommand=DefaultBuild\XE1003.clnk
+-library=DefaultBuild\XE1003.lib
+-input=DefaultBuild\dbsct.obj
+-input=DefaultBuild\intprg.obj
+-input=DefaultBuild\resetprg.obj
+-input=DefaultBuild\sbrk.obj
+-input=DefaultBuild\vecttbl.obj
+-input=DefaultBuild\XE1003.obj
+-input=DefaultBuild\r_flash_api_rx600.obj
+-input=DefaultBuild\table.obj
+-input=DefaultBuild\ram.obj
+-input=DefaultBuild\m_switch.obj
+-input=DefaultBuild\m_switch_ram.obj
+-input=DefaultBuild\m_led.obj
+-input=DefaultBuild\m_led_ram.obj
+-input=DefaultBuild\m_led_table.obj
+-input=DefaultBuild\m_nor.obj
+-input=DefaultBuild\m_nor_ram.obj
+-input=DefaultBuild\m_nor_table.obj
+-noprelink
+-output=DefaultBuild\XE1003.abs
+-list=DefaultBuild\XE1003.map
+-nooptimize
+-start=B_1,R_1,B_2,R_2,B,R,SU,SI/00000004,RPFRAM/00018000,PResetPRG/0FFF40000,C_1,C_2,C,C$DSEC,C$BSEC,C$INIT,C$VTBL,C$VECT,D_1,D_2,D,P,PIntPRG,W_1,W_2,W,L/0FFF40100,PFRAM/FFFE0000,FIXEDVECT/0FFFFFFD0
+-rom=D=R,D_1=R_1,D_2=R_2,PFRAM=RPFRAM
+-nologo
+-end
+
+*** Error information ***
+
+*** Mapping List ***
+
+SECTION                            START      END         SIZE   ALIGN
+
+B_1
+                                  00000004  00000120       11d   1
+R_1
+                                  00000121  00000122         2   1
+B_2
+                                  00000124  000001df        bc   2
+R_2
+                                  000001e0  000001f3        14   2
+B
+                                  000001f4  000005fb       408   4
+R
+                                  000005fc  0000061b        20   4
+SU
+                                  0000061c  0000071b       100   4
+SI
+                                  0000071c  00000a1b       300   4
+RPFRAM
+                                  00018000  0001925e      125f   1
+$ADDR_B_1F700
+                                  0001f700  0001ff16       817   1
+PResetPRG
+                                  fff40000  fff4002f        30   1
+C_1
+                                  fff40100  fff4013e        3f   1
+C_2
+                                  fff40140  fff4015f        20   2
+C
+                                  fff40160  fff40293       134   4
+C$DSEC
+                                  fff40294  fff402c3        30   4
+C$BSEC
+                                  fff402c4  fff402db        18   4
+C$INIT
+                                  fff402dc  fff402dc         0   1
+C$VTBL
+                                  fff402dc  fff402dc         0   1
+C$VECT
+                                  fff402dc  fff406db       400   4
+D_1
+                                  fff406dc  fff406dd         2   1
+D_2
+                                  fff406de  fff406f1        14   2
+D
+                                  fff406f4  fff40713        20   4
+P
+                                  fff40714  fff420d7      19c4   1
+PIntPRG
+                                  fff420d8  fff421ed       116   1
+W_1
+                                  fff421ee  fff421ee         0   1
+W_2
+                                  fff421ee  fff421ee         0   1
+W
+                                  fff421ee  fff421ee         0   1
+L
+                                  fff421ee  fff421ee         0   1
+PFRAM
+                                  fffe0000  fffe125e      125f   1
+$ADDR_C_FFFFFFA0
+                                  ffffffa0  ffffffaf        10   1
+FIXEDVECT
+                                  ffffffd0  ffffffff        30   4
